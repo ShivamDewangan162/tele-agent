@@ -25,7 +25,31 @@ customers = {
             {"date": "2026-06-01", "amount": 299, "status": "success"},
             {"date": "2026-05-02", "amount": 299, "status": "failed", "note": "Amount deducted, recharge not applied"}
         ]
-    }
+    },
+    "9876543212": {
+        "name": "Amit Verma",
+        "plan": "Airtel 499 Unlimited 5G",
+        "data_remaining": "12.5 GB",
+        "validity": "18 days",
+        "last_recharge": "2026-06-15",
+        "balance": 45,
+        "pending_complaints": [],
+        "billing_history": [
+            {"date": "2026-06-15", "amount": 499, "status": "success"},
+            {"date": "2026-05-16", "amount": 499, "status": "success"}
+        ],
+        "security_alerts": [
+            {
+                "date": "2026-07-02",
+                "type": "SIM Replacement Request",
+                "status": "Pending Verification"
+            },
+            {
+                "date": "2026-07-02",
+                "type": "New Device Login",
+                "status": "Detected"
+            }
+        ]
 }
 
 complaints = {}
