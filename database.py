@@ -50,6 +50,7 @@ customers = {
                 "status": "Detected"
             }
         ]
+    }
 }
 
 complaints = {}
