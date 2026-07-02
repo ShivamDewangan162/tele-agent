@@ -124,7 +124,7 @@ st.markdown("""
 <div class="airtel-header">
     <div>
         <h1>Airtel AI Support</h1>
-        <p>Intelligent support — we don't just talk, we execute</p>
+        <p>AI that executes</p>
     </div>
 </div>
 """, unsafe_allow_html=True)
