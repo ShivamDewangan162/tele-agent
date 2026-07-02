@@ -185,6 +185,7 @@ if not st.session_state.customer:
             <strong>Demo credentials:</strong><br>
             9876543210 — Rahul Sharma (failed recharge case)<br>
             9123456780 — Priya Patel (low data + network complaint)
+            9876543212 — Amit Verma (SIM lost)
         </div>
         """, unsafe_allow_html=True)
 
