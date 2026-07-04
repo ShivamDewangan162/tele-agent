@@ -3,9 +3,36 @@ import groq
 import json
 import os
 import random
-from database import customers
+import sqlite3
 
-client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
+client = groq.Groq(os.environ.get("GROQ_API_KEY"))
+
+def get_customer_from_db(phone):
+    conn = sqlite3.connect('airtel.db')
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM customers WHERE phone = ?", (phone,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return None
+    
+    customer = {
+        "phone": row[0],
+        "name": row[1],
+        "plan": row[2],
+        "data_remaining": row[3],
+        "validity": row[4],
+        "last_recharge": row[5]
+    }
+    
+    cursor.execute("SELECT date, amount, status, note FROM billing_history WHERE phone = ? ORDER BY date DESC", (phone,))
+    billing_rows = cursor.fetchall()
+    customer["billing_history"] = [
+        {"date": r[0], "amount": r[1], "status": r[2], "note": r[3]} for r in billing_rows
+    ]
+    
+    conn.close()
+    return customer
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -35,8 +62,8 @@ def get_ai_response(customer_message, customer_data, intent):
     if intent == "escalation":
         billing = customer_data.get("billing_history", [])
         failed = [b for b in billing if b.get("status") == "failed"]
-        failed_summary = f"Failed recharge on {failed[0]['date']} for ₹{failed[0]['amount']}" if failed else "No failed recharges"
-        
+        failed_summary = f"Failed recharge on {failed[0]['date']} for Rs.{failed[0]['amount']}" if failed else "No failed recharges"
+
         escalation_summary = f"""
 ESCALATION SUMMARY
 ==================
@@ -46,7 +73,6 @@ Plan: {customer_data['plan']}
 Data Remaining: {customer_data['data_remaining']}
 Validity: {customer_data['validity']}
 Billing Issue: {failed_summary}
-Pending Complaints: {customer_data.get('pending_complaints', [])}
 Chat History: {len(st.session_state.messages)} messages exchanged
 Urgency: HIGH
 ==================
@@ -124,7 +150,7 @@ st.markdown("""
 <div class="airtel-header">
     <div>
         <h1>Airtel AI Support</h1>
-        <p>AI that executes</p>
+        <p>Intelligent support -- we don't just talk, we execute</p>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -138,28 +164,16 @@ with st.sidebar:
     - Network complaints
     - Complex escalations
     
-    Built to simulate how **Commotion's agentic AI** works in enterprise telecom deployments.
-    """)
-    st.divider()
-    st.markdown("### What It Can Do")
-    st.markdown("""
-    **Resolves autonomously:**
-    - Failed recharge → initiates refund
-    - Billing dispute → explains from account history
-    - Network issue → raises ticket with timeline
-    
-    **Escalates intelligently:**
-    - Summarizes full context for human agent
-    - Customer never repeats themselves
+    Account data is queried live from a SQLite database.
     """)
     st.divider()
     st.markdown("Built by **Shiva** | IIT Bombay CTARA")
-    
+
     if st.session_state.tickets:
         st.divider()
         st.markdown("### Active Tickets")
         for t in st.session_state.tickets:
-            st.markdown(f"🎫 `{t['id']}` — {t['type']}")
+            st.markdown(f"Ticket `{t['id']}` -- {t['type']}")
 
 if not st.session_state.customer:
     col1, col2, col3 = st.columns([1,2,1])
@@ -173,19 +187,18 @@ if not st.session_state.customer:
         st.markdown("")
         phone = st.text_input("Mobile Number", placeholder="Enter 10-digit number")
         if st.button("Start Chat"):
-            customer = customers.get(phone)
+            customer = get_customer_from_db(phone)
             if customer:
                 st.session_state.customer = customer
-                st.session_state.customer["phone"] = phone
                 st.rerun()
             else:
                 st.error("Number not found. Use demo credentials below.")
         st.markdown("""
         <div class="demo-credentials">
             <strong>Demo credentials:</strong><br>
-            9876543210 — Rahul Sharma (failed recharge case)<br>
-            9123456780 — Priya Patel (low data + network complaint)
-            9876543212 — Amit Verma (SIM lost)
+            9876543210 -- Rahul Sharma (failed recharge case)<br>
+            9123456780 -- Priya Patel (low data + network complaint)<br>
+            9876543212 -- Amit Verma
         </div>
         """, unsafe_allow_html=True)
 
@@ -207,11 +220,7 @@ else:
         """, unsafe_allow_html=True)
 
         if data_remaining == "0 GB":
-            st.markdown("""
-            <div class="warning-badge">
-                ⚠️ Data exhausted. Consider recharging.
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown('<div class="warning-badge">Data exhausted. Consider recharging.</div>', unsafe_allow_html=True)
 
         if st.button("End Session"):
             st.session_state.messages = []
@@ -226,9 +235,9 @@ else:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 if msg.get("type") == "ticket":
-                    st.markdown(f'<div class="ticket-card">🎫 <strong>Ticket Raised</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="ticket-card">Ticket Raised<br>{msg["content"]}</div>', unsafe_allow_html=True)
                 elif msg.get("type") == "escalation":
-                    st.markdown(f'<div class="escalation-card">🚨 <strong>Escalation Summary for Human Agent</strong><br><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="escalation-card">Escalation Summary for Human Agent<br><br>{msg["content"]}</div>', unsafe_allow_html=True)
                 else:
                     st.write(msg["content"])
 
@@ -237,7 +246,6 @@ else:
 
             if user_input:
                 st.session_state.messages.append({"role": "user", "content": user_input})
-
                 intent = detect_intent(user_input)
                 action, response = get_ai_response(user_input, customer, intent)
 
@@ -250,11 +258,7 @@ else:
                         "content": f"I understand your frustration. I'm escalating this to a senior agent right away. Your escalation ticket is {ticket_id}.",
                         "type": "text"
                     })
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": response,
-                        "type": "escalation"
-                    })
+                    st.session_state.messages.append({"role": "assistant", "content": response, "type": "escalation"})
                 else:
                     if intent == "network":
                         ticket_id = generate_ticket_id()
