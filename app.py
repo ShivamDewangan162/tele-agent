@@ -5,7 +5,7 @@ import os
 import random
 import sqlite3
 
-client = groq.Groq(os.environ.get("GROQ_API_KEY"))
+client = groq.Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 def get_customer_from_db(phone):
     conn = sqlite3.connect('airtel.db')
