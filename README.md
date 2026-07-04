@@ -11,7 +11,7 @@ Demo login: 9876543210
 - Failed recharge : Detects it in billing history, confirms refund + timeline
 - Billing dispute : Explains charges from actual account data
 - Network complaint : Raises a support ticket with an ID, gives resolution timeline
-- Escalation : Raises an escalation ticket and auto-generates a full context summary for the human agent so that customer doesn't need to repeats themselves
+- Escalation : Raises an escalation ticket and auto-generates a full context summary for the human agent so that customer doesn't need to repeat themselves
 
 ## How it works
 
@@ -28,4 +28,5 @@ Although this project uses a text-based interface, the underlying architecture i
 ## Stack
 Streamlit, Groq (Llama 3.3 70B), Python
 
-**This is a simulation mock database instead of a live CRM, keyword-based intent detection instead of a trained classifier. In a real deployment these would connect to actual enterprise systems (Salesforce, Zendesk, etc.).**
+## Limitation
+This is a simulation mock database instead of a live CRM, keyword-based intent detection instead of a trained classifier. In a real deployment these would connect to actual enterprise systems (Salesforce, Zendesk, etc.).**
